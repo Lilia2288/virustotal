@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка безопасности</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 100px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+        }
+
+        .tab:hover {
+            background: #e8e8e8;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .result-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .result-item.safe {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .result-item.warning {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+
+        .result-item.danger {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon {
+            font-size: 20px;
+        }
+
+        .result-detail {
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+
+        .summary {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .summary-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .safe-color {
+            color: #4caf50;
+        }
+
+        .warning-color {
+            color: #ff9800;
+        }
+
+        .danger-color {
+            color: #f44336;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Проверка безопасности</h1>
+            <p>Анализ файлов, ссылок и доменов на потенциальные угрозы</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('url')">URL</button>
+            <button class="tab" onclick="switchTab('domain')">Домен</button>
+            <button class="tab" onclick="switchTab('file')">Файл</button>
+            <button class="tab" onclick="switchTab('email')">Email</button>
+            <button class="tab" onclick="switchTab('ip')">IP-адрес</button>
+            <button class="tab" onclick="switchTab('password')">Пароль</button>
+            <button class="tab" onclick="switchTab('phone')">Телефон</button>
+            <button class="tab" onclick="switchTab('bulk')">Массовая</button>
+        </div>
+
+        <div class="content">
+            <div id="url-tab" class="tab-content active">
+                <div class="input-group">
+                    <label>Введите URL для проверки:</label>
+                    <input type="text" id="url-input" placeholder="https://example.com">
+                </div>
+                <button class="btn" onclick="checkURL()">Проверить URL</button>
+                <div id="url-results" class="results"></div>
+            </div>
+
+            <div id="domain-tab" class="tab-content">
+                <div class="input-group">
+                    <label>Введите домен для проверки:</label>
+                    <input type="text" id="domain-input" placeholder="example.com">
+                </div>
+                <button class="btn" onclick="checkDomain()">Проверить домен</button>
+                <div id="domain-results" class="results"></div>
+            </div>
+
+            <div id="file-tab" class="tab-content">
+                <div class="input-group">
+                    <label>Выберите файл для проверки:</label>
+                    <input type="file" id="file-input">
+                </div>
+                <button class="btn" onclick="checkFile()">Проверить файл</button>
+                <div id="file-results" class="results"></div>
+            </div>
+
+            <div id="phone-tab" class="tab-content">
+                <div class="input-group">
+                    <label>Введите номер телефона:</label>
+                    <input type="text" id="phone-input" placeholder="+7 900 123-45-67">
+                </div>
+                <button class="btn" onclick="checkPhone()">Проверить телефон</button>
+                <div id="phone-results" class="results"></div>
+            </div>
+
+            <div id="email-tab" class="tab-content">
+                <div class="input-group">
+                    <label>Введите email для проверки:</label>
+                    <input type="text" id="email-input" placeholder="example@domain.com">
+                </div>
+                <button class="btn" onclick="checkEmail()">Проверить email</button>
+                <div id="email-results" class="results"></div>
+            </div>
+
+            <div id="ip-tab" class="tab-content">
+                <div class="input-group">
+                    <label>Введите IP-адрес для проверки:</label>
+                    <input type="text" id="ip-input" placeholder="192.168.1.1">
+                </div>
+                <button class="btn" onclick="checkIP()">Проверить IP</button>
+                <div id="ip-results" class="results"></div>
+            </div>
+
+            <div id="password-tab" class="tab-content">
+                <div class="input-group">
+                    <label>Введите пароль для проверки надежности:</label>
+                    <input type="text" id="password-input" placeholder="Ваш пароль">
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">⚠️ Проверка выполняется локально, пароль
+                        не отправляется на сервер</p>
+                </div>
+                <button class="btn" onclick="checkPassword()">Проверить пароль</button>
+                <div id="password-results" class="results"></div>
+            </div>
+
+
+
+            <div id="bulk-tab" class="tab-content">
+                <div class="input-group">
+                    <label>Введите несколько URL (по одному на строку):</label>
+                    <textarea id="bulk-input"
+                        placeholder="https://example1.com&#10;https://example2.com&#10;https://example3.com"></textarea>
+                </div>
+                <button class="btn" onclick="checkBulk()">Проверить все</button>
+                <div id="bulk-results" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        function checkURL() {
+            const url = document.getElementById('url-input').value;
+            if (!url) {
+                alert('Пожалуйста, введите URL');
+                return;
+            }
+
+            const results = analyzeURL(url);
+            displayResults('url-results', results);
+        }
+
+        function checkDomain() {
+            const domain = document.getElementById('domain-input').value;
+            if (!domain) {
+                alert('Пожалуйста, введите домен');
+                return;
+            }
+
+            const results = analyzeDomain(domain);
+            displayResults('domain-results', results);
+        }
+
+        function checkFile() {
+            const fileInput = document.getElementById('file-input');
+            if (!fileInput.files.length) {
+                alert('Пожалуйста, выберите файл');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const results = analyzeFile(file);
+            displayResults('file-results', results);
+        }
+
+        function checkPhone() {
+            const phone = document.getElementById('phone-input').value;
+            if (!phone) {
+                alert('Пожалуйста, введите номер телефона');
+                return;
+            }
+
+            const results = analyzePhone(phone);
+            displayResults('phone-results', results);
+        }
+
+        function checkEmail() {
+            const email = document.getElementById('email-input').value;
+            if (!email) {
+                alert('Пожалуйста, введите email');
+                return;
+            }
+
+            const results = analyzeEmail(email);
+            displayResults('email-results', results);
+        }
+
+        function checkIP() {
+            const ip = document.getElementById('ip-input').value;
+            if (!ip) {
+                alert('Пожалуйста, введите IP-адрес');
+                return;
+            }
+
+            const results = analyzeIP(ip);
+            displayResults('ip-results', results);
+        }
+
+        function checkPassword() {
+            const password = document.getElementById('password-input').value;
+            if (!password) {
+                alert('Пожалуйста, введите пароль');
+                return;
+            }
+
+            const results = analyzePassword(password);
+            displayResults('password-results', results);
+        }
+
+
+
+        function checkBulk() {
+            const urls = document.getElementById('bulk-input').value.split('\n').filter(u => u.trim());
+            if (!urls.length) {
+                alert('Пожалуйста, введите хотя бы один URL');
+                return;
+            }
+
+            const allResults = urls.map(url => analyzeURL(url.trim()));
+            displayBulkResults('bulk-results', allResults);
+        }
+
+        function analyzeURL(url) {
+            const checks = [];
+            let safe = 0, warning = 0, danger = 0;
+
+            // Проверка протокола
+            if (url.startsWith('https://')) {
+                checks.push({ type: 'safe', title: 'Защищенное соединение (HTTPS)', detail: 'URL использует защищенный протокол' });
+                safe++;
+            } else if (url.startsWith('http://')) {
+                checks.push({ type: 'warning', title: 'Незащищенное соединение (HTTP)', detail: 'Данные могут быть перехвачены' });
+                warning++;
+            } else if (url.startsWith('ftp://')) {
+                checks.push({ type: 'warning', title: 'FTP протокол', detail: 'Незащищенный протокол передачи файлов' });
+                warning++;
+            } else if (url.startsWith('ftps://')) {
+                checks.push({ type: 'safe', title: 'FTPS протокол', detail: 'Защищенная версия FTP' });
+                safe++;
+            } else if (url.startsWith('file://')) {
+                checks.push({ type: 'danger', title: 'Локальный файл', detail: 'Попытка доступа к локальной файловой системе' });
+                danger++;
+            } else if (url.startsWith('data:')) {
+                checks.push({ type: 'warning', title: 'Data URI', detail: 'Встроенные данные в URL (проверьте содержимое)' });
+                warning++;
+            } else if (url.startsWith('javascript:')) {
+                checks.push({ type: 'danger', title: 'JavaScript URI', detail: 'ОПАСНО! Выполнение JavaScript кода' });
+                danger++;
+            } else if (url.startsWith('vbscript:')) {
+                checks.push({ type: 'danger', title: 'VBScript URI', detail: 'ОПАСНО! Выполнение VBScript кода' });
+                danger++;
+            } else {
+                checks.push({ type: 'danger', title: 'Неверный протокол', detail: 'URL должен начинаться с http:// или https://' });
+                danger++;
+            }
+
+            // Проверка подозрительных символов
+            const suspiciousChars = /[<>'"(){}]/;
+            if (suspiciousChars.test(url)) {
+                checks.push({ type: 'danger', title: 'Подозрительные символы', detail: 'Обнаружены потенциально опасные символы' });
+                danger++;
+            } else {
+                checks.push({ type: 'safe', title: 'Нет подозрительных символов', detail: 'URL не содержит опасных символов' });
+                safe++;
+            }
+
+            // Проверка на SQL инъекции
+            const sqlPattern = /(union|select|insert|update|delete|drop|create|alter|exec|script|javascript|onerror|onclick|onload|eval|expression)/i;
+            if (sqlPattern.test(url)) {
+                checks.push({ type: 'danger', title: 'Возможная SQL/XSS инъекция', detail: 'Обнаружены подозрительные команды' });
+                danger++;
+            } else {
+                checks.push({ type: 'safe', title: 'Нет SQL/XSS паттернов', detail: 'Не обнаружено попыток инъекций' });
+                safe++;
+            }
+
+            // Проверка на кодирование URL
+            const encodedPattern = /%[0-9a-f]{2}/gi;
+            const encodedMatches = url.match(encodedPattern);
+            if (encodedMatches && encodedMatches.length > 15) {
+                checks.push({ type: 'danger', title: 'Критическое URL-кодирование', detail: 'Обнаружено ' + encodedMatches.length + ' закодированных символов' });
+                danger++;
+            } else if (encodedMatches && encodedMatches.length > 10) {
+                checks.push({ type: 'warning', title: 'Чрезмерное URL-кодирование', detail: 'Обнаружено ' + encodedMatches.length + ' закодированных символов' });
+                warning++;
+            } else if (encodedMatches && encodedMatches.length > 0) {
+                checks.push({ type: 'safe', title: 'Нормальное URL-кодирование', detail: 'Найдено ' + encodedMatches.length + ' закодированных символов' });
+                safe++;
+            }
+
+            // Проверка длины URL
+            if (url.length > 500) {
+                checks.push({ type: 'danger', title: 'Критически длинный URL', detail: 'Подозрительно длинный адрес (' + url.length + ' символов)' });
+                danger++;
+            } else if (url.length > 200) {
+                checks.push({ type: 'warning', title: 'Очень длинный URL', detail: 'Подозрительно длинный адрес (' + url.length + ' символов)' });
+                warning++;
+            } else {
+                checks.push({ type: 'safe', title: 'Нормальная длина URL', detail: 'Длина адреса в пределах нормы' });
+                safe++;
+            }
+
+            const domain = extractDomain(url);
+
+            // Проверка на фишинг
+            const phishingPatterns = [
+                { pattern: /paypa[l1i]/i, name: 'PayPal' },
+                { pattern: /g[o0][o0]g[l1i]e/i, name: 'Google' },
+                { pattern: /faceb[o0][o0]k/i, name: 'Facebook' }
+            ];
+
+            for (let p of phishingPatterns) {
+                if (p.pattern.test(domain) && !domain.includes(p.name.toLowerCase())) {
+                    checks.push({ type: 'danger', title: 'Возможный фишинг ' + p.name, detail: 'Домен имитирует известный бренд' });
+                    danger++;
+                    break;
+                }
+            }
+
+            // Проверка на подозрительные ключевые слова в домене
+            const suspiciousKeywords = ['secure', 'account', 'update', 'verify', 'login', 'signin', 'banking'];
+            const domainLower = domain.toLowerCase();
+            const foundKeywords = suspiciousKeywords.filter(k => domainLower.includes(k));
+            if (foundKeywords.length > 0) {
+                checks.push({ type: 'warning', title: 'Подозрительные слова в домене', detail: 'Найдено: ' + foundKeywords.join(', ') });
+                warning++;
+            }
+
+            return { checks, summary: { safe, warning, danger }, url };
+        }
+
+        function analyzeDomain(domain) {
+            const checks = [];
+            let safe = 0, warning = 0, danger = 0;
+
+            const domainPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?(\.[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?)*\.[a-zA-Z]{2,}$/;
+            if (domainPattern.test(domain)) {
+                checks.push({ type: 'safe', title: 'Корректный формат домена', detail: 'Домен соответствует стандартам' });
+                safe++;
+            } else {
+                checks.push({ type: 'danger', title: 'Неверный формат домена', detail: 'Домен не соответствует стандартам' });
+                danger++;
+            }
+
+            if (domain.length > 63) {
+                checks.push({ type: 'warning', title: 'Длинный домен', detail: 'Подозрительно длинное доменное имя (' + domain.length + ' символов)' });
+                warning++;
+            } else {
+                checks.push({ type: 'safe', title: 'Нормальная длина домена', detail: 'Длина домена в пределах нормы' });
+                safe++;
+            }
+
+            const entropy = calculateEntropy(domain.split('.')[0]);
+            if (entropy > 4.5) {
+                checks.push({ type: 'warning', title: 'Высокая энтропия домена', detail: 'Домен выглядит случайно сгенерированным' });
+                warning++;
+            } else {
+                checks.push({ type: 'safe', title: 'Нормальная энтропия', detail: 'Домен выглядит естественно' });
+                safe++;
+            }
+
+            return { checks, summary: { safe, warning, danger }, url: domain };
+        }
+
+        function calculateEntropy(str) {
+            const freq = {};
+            for (let char of str) {
+                freq[char] = (freq[char] || 0) + 1;
+            }
+            let entropy = 0;
+            const len = str.length;
+            for (let char in freq) {
+                const p = freq[char] / len;
+                entropy -= p * Math.log2(p);
+            }
+            return entropy;
+        }
+
+        function analyzeFile(file) {
+            const checks = [];
+            let safe = 0, warning = 0, danger = 0;
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            const dangerousExts = ['exe', 'bat', 'cmd', 'com', 'pif', 'scr', 'vbs', 'js'];
+
+            if (dangerousExts.includes(ext)) {
+                checks.push({ type: 'danger', title: 'Исполняемый файл', detail: 'Расширение .' + ext + ' может содержать вредоносный код' });
+                danger++;
+            } else {
+                checks.push({ type: 'safe', title: 'Безопасное расширение', detail: 'Расширение .' + ext + ' считается безопасным' });
+                safe++;
+            }
+
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            if (file.size > 100 * 1024 * 1024) {
+                checks.push({ type: 'warning', title: 'Большой размер файла', detail: 'Размер: ' + sizeMB + ' MB' });
+                warning++;
+            } else {
+                checks.push({ type: 'safe', title: 'Нормальный размер файла', detail: 'Размер: ' + sizeMB + ' MB' });
+                safe++;
+            }
+
+            return { checks, summary: { safe, warning, danger }, url: file.name };
+        }
+
+        function analyzePhone(phone) {
+            const checks = [];
+            let safe = 0, warning = 0, danger = 0;
+
+            // Очистка от пробелов и дефисов для анализа
+            const cleanPhone = phone.replace(/[\s-()]/g, '');
+
+            // Проверка допустимых символов
+            if (/^[+\d]+$/.test(cleanPhone)) {
+                checks.push({ type: 'safe', title: 'Допустимые символы', detail: 'Номер содержит только цифры и плюс' });
+                safe++;
+            } else {
+                checks.push({ type: 'danger', title: 'Недопустимые символы', detail: 'Номер должен содержать только цифры, +, скобки и дефисы' });
+                danger++;
+            }
+
+            // Проверка длины
+            if (cleanPhone.length >= 10 && cleanPhone.length <= 15) {
+                checks.push({ type: 'safe', title: 'Корректная длина', detail: 'Длина номера в пределах нормы (10-15 цифр)' });
+                safe++;
+            } else {
+                checks.push({ type: 'warning', title: 'Подозрительная длина', detail: 'Номер слишком короткий или слишком длинный' });
+                warning++;
+            }
+
+            // Проверка кода страны (пример для РФ и популярных)
+            if (cleanPhone.startsWith('+7') || cleanPhone.startsWith('8')) {
+                checks.push({ type: 'safe', title: 'Российский регион', detail: 'Определен код России (+7)' });
+                safe++;
+            } else if (cleanPhone.startsWith('+1')) {
+                checks.push({ type: 'safe', title: 'Регион США/Канада', detail: 'Определен код +1' });
+                safe++;
+            } else if (!cleanPhone.startsWith('+')) {
+                checks.push({ type: 'warning', title: 'Отсутствует код страны', detail: 'Рекомендуется использовать международный формат (+7...)' });
+                warning++;
+            }
+
+            // Проверка на повторяющиеся цифры (простой спам/фейк паттерн)
+            if (/(\d)\1{5,}/.test(cleanPhone)) {
+                checks.push({ type: 'warning', title: 'Повторяющиеся цифры', detail: 'Обнаружено много одинаковых цифр подряд' });
+                warning++;
+            }
+
+            return { checks, summary: { safe, warning, danger }, url: phone };
+        }
+
+        function analyzeEmail(email) {
+            const checks = [];
+            let safe = 0, warning = 0, danger = 0;
+
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailPattern.test(email)) {
+                checks.push({ type: 'safe', title: 'Корректный формат email', detail: 'Email соответствует базовому формату' });
+                safe++;
+            } else {
+                checks.push({ type: 'danger', title: 'Неверный формат email', detail: 'Email не соответствует стандарту' });
+                danger++;
+                return { checks, summary: { safe, warning, danger }, url: email };
+            }
+
+            const [localPart, domain] = email.split('@');
+
+            if (localPart.length > 64) {
+                checks.push({ type: 'danger', title: 'Слишком длинная локальная часть', detail: 'Превышен лимит в 64 символа' });
+                danger++;
+            } else {
+                checks.push({ type: 'safe', title: 'Нормальная длина локальной части', detail: localPart.length + ' символов' });
+                safe++;
+            }
+
+            return { checks, summary: { safe, warning, danger }, url: email };
+        }
+
+        function analyzeIP(ip) {
+            const checks = [];
+            let safe = 0, warning = 0, danger = 0;
+
+            const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+            const ipv4Match = ip.match(ipv4Pattern);
+
+            if (ipv4Match) {
+                const octets = ipv4Match.slice(1, 5).map(Number);
+
+                if (octets.every(o => o >= 0 && o <= 255)) {
+                    checks.push({ type: 'safe', title: 'Корректный IPv4 адрес', detail: 'Формат IPv4 соблюден' });
+                    safe++;
+                } else {
+                    checks.push({ type: 'danger', title: 'Неверный IPv4', detail: 'Октеты должны быть в диапазоне 0-255' });
+                    danger++;
+                }
+
+                if (octets[0] === 192 && octets[1] === 168) {
+                    checks.push({ type: 'warning', title: 'Приватная сеть', detail: '192.168.0.0/16 - внутренняя сеть' });
+                    warning++;
+                }
+            } else {
+                checks.push({ type: 'danger', title: 'Неверный формат IP', detail: 'Не является корректным IPv4' });
+                danger++;
+            }
+
+            return { checks, summary: { safe, warning, danger }, url: ip };
+        }
+
+        function analyzePassword(password) {
+            const checks = [];
+            let safe = 0, warning = 0, danger = 0;
+            let score = 0;
+
+            if (password.length < 8) {
+                checks.push({ type: 'danger', title: 'Слишком короткий пароль', detail: 'Минимум 8 символов' });
+                danger++;
+            } else if (password.length < 12) {
+                checks.push({ type: 'warning', title: 'Короткий пароль', detail: 'Рекомендуется 12+ символов' });
+                warning++;
+                score += 1;
+            } else {
+                checks.push({ type: 'safe', title: 'Достаточная длина пароля', detail: 'Длина: ' + password.length + ' символов' });
+                safe++;
+                score += 2;
+            }
+
+            if (/[a-z]/.test(password)) {
+                checks.push({ type: 'safe', title: 'Содержит строчные буквы', detail: 'Найдены символы a-z' });
+                safe++;
+                score += 1;
+            } else {
+                checks.push({ type: 'danger', title: 'Нет строчных букв', detail: 'Добавьте символы a-z' });
+                danger++;
+            }
+
+            if (/[A-Z]/.test(password)) {
+                checks.push({ type: 'safe', title: 'Содержит заглавные буквы', detail: 'Найдены символы A-Z' });
+                safe++;
+                score += 1;
+            } else {
+                checks.push({ type: 'warning', title: 'Нет заглавных букв', detail: 'Рекомендуется добавить A-Z' });
+                warning++;
+            }
+
+            let strength = score >= 4 ? 'Сильный' : score >= 2 ? 'Средний' : 'Слабый';
+            let strengthColor = score >= 4 ? 'safe' : score >= 2 ? 'warning' : 'danger';
+
+            checks.unshift({ type: strengthColor, title: '🔒 Сила пароля: ' + strength, detail: 'Оценка: ' + score + ' из 5' });
+
+            return { checks, summary: { safe, warning, danger }, url: '***' };
+        }
